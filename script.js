@@ -6,35 +6,21 @@ const form = document.getElementById("form"),
 
 // Search by song or artist
 async function searchSongs(term) {
-  const res = await fetch(`${apiURL}/suggest/${term}`);
-  const data = await res.json();
+  console.log("request!");
+  try {
+    const res = await fetch(`${apiURL}/suggest/${term}`);
+    const data = await res.json();
 
-  console.log(data);
+    console.log(data);
 
-  showData(data);
+    showData(data);
+  } catch (err) {
+    throw new Error(err);
+  }
 }
 
 // Show song and artist in DOM
 function showData(data) {
-  //! Option 1
-  // let output = "";
-
-  // data.data.forEach((song) => {
-  //   output += `
-  //   <li>
-  //   <span><strong>${song.artist.name}</strong> - ${song.title}</span>
-  //   <button class="btn" data-artist="${song.artist.name}" data-songtitle="${song.title}">Get Lyrics</button>
-  //   </li>
-  //   `;
-  // });
-
-  // result.innerHTML = `
-  // <ul class="songs">
-  // ${output}
-  // </ul>
-  // `;
-
-  //! Option 2
   result.innerHTML = `
   <ul class="songs">
   ${data.data
@@ -49,6 +35,40 @@ function showData(data) {
     .join("")}
   </ul>
   `;
+
+  if (data.prev || data.next) {
+    more.innerHTML = `
+    ${
+      data.prev
+        ? `<button class="btn" onclick="getMoreSongs('${data.prev}')">Prev</button>`
+        : ""
+    }
+    ${
+      data.next
+        ? `<button class="btn" onclick="getMoreSongs('${data.next}')">Next</button>`
+        : ""
+    }
+    `;
+  } else {
+    more.innerHTML = "";
+  }
+}
+
+// Get prev and next results
+async function getMoreSongs(url) {
+  const res = await fetch(`https://cors-anywhere.herokuapp.com/${url}`);
+  const data = await res.json();
+
+  showData(data);
+}
+
+// Get Lyrics
+
+async function getLyrics(artist, songTitle) {
+  const res = await fetch(`${apiURL}/v1/${artist}/${songTitle}`);
+  const data = await res.json();
+
+  console.log(data);
 }
 
 // Event Listeners
@@ -61,5 +81,18 @@ form.addEventListener("submit", (e) => {
     alert("Please type in a search term");
   } else {
     searchSongs(searchTearm);
+  }
+});
+
+// Get lyrics button click
+
+result.addEventListener("click", (e) => {
+  const clickedEl = e.target;
+
+  if (clickedEl.tagName === "BUTTON") {
+    const artist = clickedEl.getAttribute("data-artist");
+    const songTitle = clickedEl.getAttribute("data-songtitle");
+
+    getLyrics(artist, songTitle);
   }
 });
